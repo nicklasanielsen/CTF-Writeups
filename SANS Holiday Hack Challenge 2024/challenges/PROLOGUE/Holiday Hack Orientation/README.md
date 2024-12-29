@@ -1,5 +1,5 @@
 # Holiday Hack Orientation
 
 ## Challenge Information
-- **Difficulty**: <span style="color: red;">❄</span>❄❄❄❄
+- **Difficulty**: 1 / 5
 - **Description**: Talk to Jingle Ringford on Christmas Island and get your bearings at Geese Islands
