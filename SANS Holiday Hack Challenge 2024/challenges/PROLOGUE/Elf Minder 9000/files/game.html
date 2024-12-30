@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELF MINDER 9000</title>
+    <link rel="stylesheet" href="./styles.css?">
+</head>
+
+<body>
+    <div class="container">
+        <div class="dialog logo">
+            <div class="dialog-content">
+                <img class="logo" src="logo.png" />
+                <div class="level-list"></div>
+            </div>
+        </div>
+        <div class="dialog help hidden">
+            <div class="dialog-content">
+                <ul class="toc">
+                    <li>Basic Gameplay</li>
+                    <li>Path Rotation</li>
+                    <li>Scoring</li>
+                    <li>Tunnels</li>
+                    <li>Springs</li>
+                    <li>Sizzling Sand</li>
+                    <li>Sleepy Crab</li>
+                </ul>
+                <div class="help-content">
+                    <video width="356" height="348" autoplay muted loop>
+                        <source src="./instructions.mp4" type="video/mp4">
+                    </video>
+                    <div class="instructions"></div>
+                </div>
+                <button class="closeBtn">X Close</button>
+            </div>
+        </div>
+        <div class="dialog milestone hidden">
+            <div class="dialog-content">
+                <h1>Nicely Done!</h1>
+                <p>You did the thing!</p>
+                <div class="button-corral">
+                    <button class="milestoneBtn">Main Menu</button>
+                    <button class="closeBtn">Close</button>
+                </div>
+            </div>
+        </div>
+        <div class="dialog youwin hidden">
+            <div class="dialog-content">
+                <h1>All Crates Collected!</h1>
+                <div class="mode-switch">
+                    <button data-mode="good">Good Boss Mode</button>
+                    <button data-mode="evil">Evil Boss Mode</button>
+                </div>
+                <div class="stats"></div>
+                <div class="scoreboard"></div>
+                <div class="button-corral">
+                    <button class="mainMenuBtn">Main Menu</button>
+                    <button class="replayBtn">Play Again?</button>
+                    <button class="nextLevelBtn">Next Level!</button>
+                </div>
+            </div>
+        </div>
+        <div class="dialog error hidden">
+            <div class="dialog-content">
+                <h2>Out of time!</h2>
+                <div class="button-corral">
+                    <button class="replayBtn">Try Again?</button>
+                    <button class="mainMenuBtn">Main Menu</button>
+                </div>
+            </div>
+        </div>
+        <div class="bg">
+            <canvas id="gamecanvas" width="800" height="700"></canvas>
+            <div class="nav">
+                <span><button class="go-home">🏠 Go Home</button></span>
+                <span class="app-title">ELF MINDER 9000 v1.2</span>
+                <span class="username">[username]</span>
+            </div>
+            <div class="sidebar">
+                <button id="pathToolBtn">Path</button>
+                <button id="eraserToolBtn">Eraser</button>
+                <button id="portalToolBtn">Tunnel</button>
+                <button id="springToolBtn">Spring</button>
+                <button id="trashBtn">Clear</button>
+                <button id="resetBtn">Restart</button>
+                <button id="startBtn">Start</button>
+                <button id="helpBtn">Help</button>
+            </div>
+        </div>
+        <div class="admin-controls hidden">
+            <!-- <button id="startBtn">Start</button> -->
+            <button id="resetBtn">Reset</button>
+            <button id="clearPathBtn">Clear Path</button>
+            <button id="clearEntitiesBtn">Clear Entities</button>
+            <fieldset id="tools">
+                <legend>Select a tool:</legend>
+
+                <input type="radio" id="path" name="tool-select" value="path" checked />
+                <label for="path">Path</label>
+
+                <input type="radio" id="eraser" name="tool-select" value="eraser" />
+                <label for="eraser">Eraser</label>
+
+                <input type="radio" id="portal" name="tool-select" value="portal" />
+                <label for="portal">Tunnel</label>
+
+                <input type="radio" id="start" name="tool-select" value="start" />
+                <label for="start">Start</label>
+
+                <input type="radio" id="end" name="tool-select" value="end" />
+                <label for="end">End</label>
+
+                <input type="radio" id="crate" name="tool-select" value="crate" />
+                <label for="crate">Crate</label>
+
+                <input type="radio" id="blocker" name="tool-select" value="blocker" />
+                <label for="blocker">Blocker</label>
+
+                <input type="radio" id="hazard" name="tool-select" value="hazard" />
+                <label for="hazard">Hazard</label>
+
+                <input type="radio" id="steam" name="tool-select" value="steam" />
+                <label for="steam">Steam</label>
+
+                <input type="radio" id="spring" name="tool-select" value="spring" />
+                <label for="spring">Spring</label>
+            </fieldset>
+        </div>
+    </div>
+    <script src="chance.min.js"></script>
+    <script src="levels.js?"></script>
+    <script src="guide.js"></script>
+    <script src="game2.js"></script>
+</body>
+
+</html>
