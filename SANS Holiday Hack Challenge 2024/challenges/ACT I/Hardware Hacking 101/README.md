@@ -105,7 +105,7 @@ I now need to connect various cables, and since I don't have much experience wit
 
 Most connections should be made to the same port on both ends, except for the Transmitter and Receiver, which should be connected as shown in the image below.
 
-![Transmitter and Receiver connection](https://www.analog.com/en/_/media/images/analog-dialogue/en/volume-54/number-4/articles/uart-a-hardware-communication-protocol/335962-fig-01.svg)
+![Transmitter and Receiver connection](images/Transmitter%20and%20Receiver%20connection.svg)
 
 Based on the above, I connect the wires as shown below:
 
