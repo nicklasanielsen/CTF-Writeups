@@ -217,7 +217,7 @@ I decide to test the silver solution but using the old API.
 I start Burp and intercept the POST request triggered when I pressed `S` on the UART.
 
 Then, I simply change the version from `2` to `1` in the request and send the modified POST request.
-So the POST request goes to `https://hhc24-hardwarehacking.holidayhackchallenge.com/api/v2/complete`.
+So the POST request goes to `https://hhc24-hardwarehacking.holidayhackchallenge.com/api/v1/complete`.
 
 ![Burp](images/Burp.png)
 
