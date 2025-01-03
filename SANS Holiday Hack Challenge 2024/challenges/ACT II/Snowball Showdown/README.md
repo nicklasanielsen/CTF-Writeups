@@ -61,3 +61,22 @@ Next, I look at the game's [source code](files/phaser-snowball-game.js) and disc
 Success! With these adjustments, I finally achieve the Silver objective.
 
 ## Solution: Gold
+
+While reviewing the game's [source code](files/phaser-snowball-game.js), I came across the function below. It doesn't seem to be used anywhere, and based on the name of the function it might be some sort of bomb functionality.
+
+```JavaScript
+this.moasb = () => { this.ws.sendMessage({ type: 'moasb' }) }
+```
+
+Since the function isn't called anywhere, I decided to modify the code again using my browser's debugger. This time, I chose to include the function to the player's `Ready` button click event, as shown below:
+
+```JavaScript
+this.ReadyButton.on('pointerdown', () => {
+    this.ws.sendMessage({ "type": "ready" })
+    this.ws.sendMessage({ "type": "moasb" })
+});
+```
+
+Wow! It seems like I've successfully triggered a hidden bomb feature, and with that, Gold is unlocked!
+
+![](images/Bomb.png)
