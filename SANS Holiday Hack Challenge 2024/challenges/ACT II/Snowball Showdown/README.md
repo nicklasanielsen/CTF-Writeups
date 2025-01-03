@@ -25,4 +25,39 @@ Dusty Giftwrap:
 
 ## Solution: Silver
 
+When I open the game, I am greeted by this menu. I do not have the option to change the mode.
+
+![](images/Menu.png)
+
+I choose to create a private room, after which the game starts.
+
+![](images/PrivateRoom.png)
+
+When I enter the room, I notice that the URL has changed and now contains additional information.
+
+```
+https://hhc24-snowballshowdown.holidayhackchallenge.com/game.html?username=Tr0phy&roomId=<room_id>&roomType=private&id=<uuid>&dna=<dna_id>&singlePlayer=false
+```
+
+In the introduction, it was mentioned that it might be possible to play in single-player mode. Therefore, I modify the URL parameter by changing `singlePlayer` to `true`.
+
+```
+https://hhc24-snowballshowdown.holidayhackchallenge.com/game.html?username=Tr0phy&roomId=<room_id>&roomType=private&id=<uuid>&dna=<dna_id>&singlePlayer=true
+```
+
+After this, I attempt to win the game, but unfortunately, I'm unsuccessful even after several tries.
+
+![](images/Defeated.png)
+
+Next, I look at the game's [source code](files/phaser-snowball-game.js) and discover that most of the logic is handled on the client side. I locate the code responsible for generating the ice wall in the middle of the game and decide to remove it. To do this, I comment out the relevant lines (found at line 1751 and 1752) using the browser's debugger.
+
+```JavaScript
+// this.createObjectCenteredAtXOnCanvas(this.bgcanvas, 'ice_wall', GAME_WIDTH / 2, GAME_HEIGHT - 25, 0.35, 1);
+// this.createObjectCenteredAtXOnCanvas(this.bgcanvasBackup, 'ice_wall', GAME_WIDTH / 2, GAME_HEIGHT - 25, 0.35, 1);
+```
+
+![](images/Win.png)
+
+Success! With these adjustments, I finally achieve the Silver objective.
+
 ## Solution: Gold
