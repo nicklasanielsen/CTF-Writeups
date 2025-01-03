@@ -122,3 +122,168 @@ The query retrieves all items from the list, excluding those containing `Ellie`.
 
 ## Solution: Gold
 
+To begin, I decompile the ABB file.
+
+Once we've successfully decompiled the file and reconstructed the Java files, it's time to examine the code. We'll follow the same approach as with the Silver challenge, starting with the `onCreate` method in the `MainActivity.java` file. After cleaning up the file, it will look as follows.
+
+```Java
+@Override
+public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    try {
+        String string = getString(R.string.iv);
+        byte[] decode = Base64.decode(StringsKt.trim((CharSequence) string).toString(), 0);
+        this.staticIv = decode;
+        String string2 = getString(R.string.ek);
+        byte[] decode2 = Base64.decode(StringsKt.trim((CharSequence) string2).toString(), 0);
+        this.secretKey = new SecretKeySpec(decode2, 0, decode2.length, "AES");
+        initializeDatabase();
+        initializeWebView();
+        initializeEncryption();
+    } catch (IllegalArgumentException e) {
+        Log.e("MainActivity", "Error during initialization: " + e.getMessage());
+    }
+}
+```
+
+In this step, we observe that the `onCreate` method begins by retrieving some string values, base64 decoding them, and storing them in the staticIv and secretKey variables. The presence of AES suggests that encryption is involved here.
+
+To retrieve the values of these strings, we can look at the `resources/res/values/strings.xml` file. This is where Android stores string resources, which are used for localization. Upon examining the file, we find two entries that are referenced in the code.
+
+```XML
+<string name="ek">rmDJ1wJ7ZtKy3lkLs6X9bZ2Jvpt6jL6YWiDsXtgjkXw=</string>
+<string name="iv">Q2hlY2tNYXRlcml4</string>
+```
+
+After retrieving the values, the onCreate method calls the initializeWebView method, which mirrors the implementation found in the MainActivity’s onCreate method in the SantaVision.apk. Additionally, it calls initializeEncryption, although this method appears to be empty.
+
+Given that the index.html file remains unchanged, the next step is to examine the getNormalList method.
+
+```Java
+@JavascriptInterface
+public final void getNormalList() {
+    try {
+        SQLiteDatabase sQLiteDatabase = MainActivity.this.database;
+        Cursor rawQuery = sQLiteDatabase.rawQuery("SELECT Item FROM NormalList", null);
+        ArrayList arrayList = new ArrayList();
+        while (rawQuery.moveToNext()) {
+            String string = rawQuery.getString(R.xml.backup_rules);
+            String decryptData = decryptData(string);
+            if (decryptData != null) {
+                arrayList.add(decryptData);
+            }
+        }
+        rawQuery.close();
+        final String joinToString$default = arrayList.isEmpty() ? "[]"
+                : CollectionsKt.joinToString$default(arrayList, "\",\"", "[\"", "\"]", R.xml.backup_rules, null,
+                        null, R.string.m3c_bottom_sheet_pane_title, null);
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public final void run() {
+                MainActivity.WebAppInterface.getNormalList$lambda$0(MainActivity.this, joinToString$default);
+            }
+        });
+    } catch (Exception unused) {
+    }
+}
+```
+
+This approach seems similar to the previous one, but unfortunately, the answer isn't found within the query this time. However, we notice an unusual function call at the string `decryptData = decryptData(string)`. This suggests that the database is returning the data in an encrypted format. Let's examine the implementation of the `decryptData` method to investigate further.
+
+```Java
+private final String decryptData(String encryptedData) {
+    try {
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        byte[] bArr = MainActivity.this.staticIv;
+        GCMParameterSpec gCMParameterSpec = new GCMParameterSpec(128, bArr);
+        SecretKey secretKey = MainActivity.this.secretKey;
+        cipher.init(R.styleable.FontFamily, secretKey, gCMParameterSpec);
+        byte[] doFinal = cipher.doFinal(Base64.decode(encryptedData, R.xml.backup_rules));
+        return new String(doFinal, Charsets.UTF_8);
+    } catch (Exception unused) {
+        return null;
+    }
+}
+```
+
+It looks like the AES cipher is being used with the credentials we discovered earlier to decrypt the data. To understand how the database functions, let's dive into the `DatabaseHelper.java` file and begin by examining the constructor.
+
+```Java
+public DatabaseHelper(Context context) {
+    super(context, DATABASE_NAME, (SQLiteDatabase.CursorFactory) null, R.xml.data_extraction_rules);
+    String string = context.getString(R.string.ek);
+    String obj = StringsKt.trim((CharSequence) string).toString();
+    String string2 = context.getString(R.string.iv);
+    String obj2 = StringsKt.trim((CharSequence) string2).toString();
+    byte[] decode = Base64.decode(obj, R.xml.backup_rules);
+    this.encryptionKey = decode;
+    byte[] decode2 = Base64.decode(obj2, R.xml.backup_rules);
+    this.iv = decode2;
+    this.secretKeySpec = new SecretKeySpec(decode, "AES");
+}
+```
+
+In this section, we encounter a similar setup to what we saw in the MainActivity. It loads the same AES key and IV values and stores them accordingly. Now, let's move on to the onCreate method to continue our analysis.
+
+```Java
+@Override
+public void onCreate(SQLiteDatabase db) {
+    db.execSQL("CREATE TABLE IF NOT EXISTS NiceList (Item TEXT);");
+    db.execSQL("CREATE TABLE IF NOT EXISTS NaughtyList (Item TEXT);");
+    db.execSQL("CREATE TABLE IF NOT EXISTS NormalList (Item TEXT);");
+    db.execSQL(decryptData("IVrt+9Zct4oUePZeQqFwyhBix8cSCIxtsa+lJZkMNpNFBgoHeJlwp73l2oyEh1Y6AfqnfH7gcU9Yfov6u70cUA2/OwcxVt7Ubdn0UD2kImNsclEQ9M8PpnevBX3mXlW2QnH8+Q+SC7JaMUc9CIvxB2HYQG2JujQf6skpVaPAKGxfLqDj+2UyTAVLoeUlQjc18swZVtTQO7Zwe6sTCYlrw7GpFXCAuI6Ex29gfeVIeB7pK7M4kZGy3OIaFxfTdevCoTMwkoPvJuRupA6ybp36vmLLMXaAWsrDHRUbKfE6UKvGoC9d5vqmKeIO9elASuagxjBJ"));
+    insertInitialData(db);
+}
+```
+
+At this point, something interesting stands out. One of the queries executed at startup is encrypted. The `decryptData` method in the `DatabaseHelper` is slightly modified, but it operates in the same way as the others. Now, let's proceed by decrypting that data. Since we've already identified the key (ek) and the initialization vector (iv), the decryption should be relatively simple.
+
+I decide to use Python for the decryption:
+
+```Python
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from base64 import b64decode
+
+iv = b64decode("Q2hlY2tNYXRlcml4")
+ek = b64decode("rmDJ1wJ7ZtKy3lkLs6X9bZ2Jvpt6jL6YWiDsXtgjkXw=")
+
+def decryptData(encryptedData):
+    return AESGCM(ek).decrypt(iv, b64decode(encryptedData), None)
+
+decrypted_data = decryptData("IVrt+9Zct4oUePZeQqFwyhBix8cSCIxtsa+lJZkMNpNFBgoHeJlwp73l2oyEh1Y6AfqnfH7gcU9Yfov6u70cUA2/OwcxVt7Ubdn0UD2kImNsclEQ9M8PpnevBX3mXlW2QnH8+Q+SC7JaMUc9CIvxB2HYQG2JujQf6skpVaPAKGxfLqDj+2UyTAVLoeUlQjc18swZVtTQO7Zwe6sTCYlrw7GpFXCAuI6Ex29gfeVIeB7pK7M4kZGy3OIaFxfTdevCoTMwkoPvJuRupA6ybp36vmLLMXaAWsrDHRUbKfE6UKvGoC9d5vqmKeIO9elASuagxjBJ")
+
+print(decrypted_data)
+```
+
+This will give us the following result.
+
+```SQL
+CREATE TRIGGER DeleteIfInsertedSpecificValue
+    AFTER INSERT ON NormalList
+    FOR EACH ROW
+    BEGIN
+        DELETE FROM NormalList WHERE Item = 'KGfb0vd4u/4EWMN0bp035hRjjpMiL4NQurjgHIQHNaRaDnIYbKQ9JusGaa1aAkGEVV8=';
+    END;
+```
+
+This is quite interesting—there seems to be a trigger being created that will remove every item matching another encrypted string. Let's take a closer look at what the decrypted version reveals.
+
+```Python
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from base64 import b64decode
+
+iv = b64decode("Q2hlY2tNYXRlcml4")
+ek = b64decode("rmDJ1wJ7ZtKy3lkLs6X9bZ2Jvpt6jL6YWiDsXtgjkXw=")
+
+def decryptData(encryptedData):
+    return AESGCM(ek).decrypt(iv, b64decode(encryptedData), None)
+
+decrypted_data = decryptData("KGfb0vd4u/4EWMN0bp035hRjjpMiL4NQurjgHIQHNaRaDnIYbKQ9JusGaa1aAkGEVV8=")
+
+print(decrypted_data)
+```
+
+When the data is printed, it shows `b'Joshua, Birmingham, United Kingdom'`.
+
+It appears that `Joshua` is not allowed to be on the list, and Gold is unlocked.
