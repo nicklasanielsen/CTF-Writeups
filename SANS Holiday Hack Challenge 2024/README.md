@@ -60,8 +60,6 @@ See tasks:
 ## Act III
 Now Wombley's gone and gotten the Naughty-Nice list ransomwared! Santa is not pleased...
 
-> :warning: I will not share the solutions for the Act III challenges before January 4, 2025, as per the [Contest Rules](https://www.sans.org/mlp/holiday-hack-challenge-2024/)
-
 **Number of tasks:** 4
 
 See tasks:
