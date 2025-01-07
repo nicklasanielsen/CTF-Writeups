@@ -70,7 +70,9 @@ Type `let’s do this` to begin your KQL training.
 
 ### Solution
 
-Jeg kopier blot svaret fra teksten
+I simply copy the answer from
+the introduction.
+
 Answer: let's do this
 
 ## Question 2
